@@ -1,0 +1,29 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gree-cli"
+version = "0.1.0"
+description = "Repo-local CLI for discovering and controlling GREE HVAC units over the LAN."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "greeclimate==2.1.4",
+  "netifaces==0.11.0",
+  "pycryptodome>=3.10,<4",
+]
+
+[project.scripts]
+gree = "gree.cli:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["gree"]
