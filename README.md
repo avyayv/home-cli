@@ -1,6 +1,17 @@
-# gree
+# Home Automation
 
-Repo-local CLI for discovering and controlling GREE HVAC units over the LAN.
+Monorepo for local home automation tools and automation harnesses.
+
+## Layout
+
+- `cli/gree`
+  - Python CLI for discovering and controlling GREE HVAC units over the LAN
+- `harness`
+  - Twilio/iMessage-style local Pi/Codex execution harness running on this Mac
+
+## GREE CLI
+
+The `gree` CLI lives under `cli/gree`.
 
 ## Setup
 
@@ -11,25 +22,25 @@ uv sync --group dev
 ## Usage
 
 ```bash
-uv run gree devices
-uv run gree config init
-uv run gree config set-device --mac c039375d1be7
-uv run gree status
-uv run gree temp 68
-uv run gree mode heat
-uv run gree fan auto
-uv run gree off
-uv run gree on
+gree devices
+gree config init
+gree config set-device --mac c039375d1be7
+gree status
+gree temp 68
+gree mode heat
+gree fan auto
+gree off
+gree on
 ```
 
-`python -m gree ...` is also supported.
+`uv run gree ...` and `python -m gree ...` are also supported.
 
 ## Device Selection
 
 Selection precedence:
 
 1. Command-line selectors like `--mac` or `--ip`
-2. Repo-local config in `gree/config.toml`
+2. Repo-local config in `cli/gree/gree/config.toml`
 3. Automatic selection when exactly one device is discovered
 
 If multiple devices are visible and no selector resolves to exactly one device, the command exits with an error.
@@ -39,10 +50,12 @@ If multiple devices are visible and no selector resolves to exactly one device, 
 Tracked example:
 
 - `gree/config.example.toml`
+  - now at `cli/gree/gree/config.example.toml`
 
 Local working config:
 
 - `gree/config.toml`
+  - now at `cli/gree/gree/config.toml`
 
 Create or inspect config with:
 

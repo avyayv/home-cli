@@ -2,4 +2,11 @@
 .pytest_cache/
 __pycache__/
 *.pyc
-gree/config.toml
+cli/gree/gree/config.toml
+harness/node_modules/
+harness/dist/
+harness/workspace/
+harness/.env
+harness/.env.local
+harness/twilio-serverless/.env
+harness/twilio-serverless/.twiliodeployinfo

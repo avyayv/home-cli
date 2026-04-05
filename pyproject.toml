@@ -23,7 +23,7 @@ dev = [
 ]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["cli/gree/tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["gree"]
+packages = ["cli/gree/gree"]
