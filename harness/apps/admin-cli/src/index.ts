@@ -7,21 +7,21 @@ import {
   formatJobsList,
   formatJobStatus,
   formatLogResponse,
-  getAllowedSmsSenders,
+  getAllowedIMessageHandles,
   loadConfig,
-  parseSmsCommand
-} from "@twilio-pi-agent/shared";
+  parseAgentCommand
+} from "@imessage-pi-agent/shared";
 
 async function main(): Promise<void> {
   const cfg = loadConfig();
   const store = new ControlPlaneStore(cfg);
   const [verb = "help", ...rest] = process.argv.slice(2);
   const raw = [verb, ...rest].join(" ").trim();
-  const sender = process.env.ADMIN_SENDER ?? getAllowedSmsSenders(cfg)[0] ?? cfg.ALLOWED_SMS_FROM;
+  const sender = process.env.ADMIN_SENDER ?? getAllowedIMessageHandles(cfg)[0] ?? cfg.ALLOWED_IMESSAGE_HANDLES;
 
   if (verb === "enqueue") {
     const task = rest.join(" ").trim();
-    const command = parseSmsCommand(task);
+    const command = parseAgentCommand(task);
     const job = await store.enqueuePrompt({
       sender,
       command,

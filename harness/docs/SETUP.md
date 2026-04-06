@@ -1,49 +1,61 @@
 # Setup
 
-## Prerequisites
+## Requirements
 
-- Node and pnpm installed
-- `pi` installed
-- `codex` installed
-- local Ollama running at `http://127.0.0.1:11434/v1`
-- Upstash Redis database
-- Twilio phone number with Messaging enabled
-- one or more allowlisted sender phone numbers in E.164 format, comma-separated in `ALLOWED_SMS_FROM`
+- Messages.app signed in and working on this Mac
+- Upstash Redis credentials
+- one or more allowlisted iMessage handles in `ALLOWED_IMESSAGE_HANDLES`
+- Full Disk Access for the terminal and any `launchd`-managed bridge process so the local Messages database can be read
+- Automation permission for the bridge to control Messages.app via AppleScript
 
-## Local setup
+## Environment
 
 1. Copy `.env.example` to `.env`
-2. Fill in Upstash, Twilio, and phone-number values
-3. Create the workspace root directory referenced by `WORKSPACE_ROOT`
-4. Install dependencies:
+2. Fill in:
+   - `UPSTASH_REDIS_REST_URL`
+   - `UPSTASH_REDIS_REST_TOKEN`
+   - `ALLOWED_IMESSAGE_HANDLES`
+3. Keep or adjust:
+   - `IMESSAGE_DB_PATH`
+   - `IMESSAGE_STATE_PATH`
+   - `IMESSAGE_POLL_INTERVAL_MS`
+   - `IMESSAGE_SERVICE_ID` if you want to pin the Messages service explicitly
+
+## Local Dev
 
 ```bash
 pnpm install
-```
-
-5. Start the runner:
-
-```bash
+pnpm typecheck
+pnpm test
+pnpm build
 pnpm dev:runner
+pnpm dev:imessage
 ```
 
-6. Start the local Twilio dev server if you want to test locally:
+## macOS Permissions
 
-```bash
-pnpm dev:twilio
-```
+Grant Full Disk Access to the terminal app you use for local testing and to any background service host if needed. Without this, the bridge will not be able to read the Messages database.
 
-## Twilio Function
-
-Deploy the handler in `apps/twilio-function/src/handler.ts` as your inbound SMS webhook logic, or run your own thin Node server that forwards the Twilio form payload into that handler.
-
-The webhook must:
-
-- validate `X-Twilio-Signature`
-- allow only `ALLOWED_SMS_FROM`
-- route plain text into the sender's current job
-- answer `/jobs`, `/status`, `/logs`, `/abort`, and `/help` synchronously
+Grant Automation permission when macOS prompts to allow the bridge to control `Messages.app`. Without this, outbound replies cannot be sent.
 
 ## launchd
 
-Use `ops/com.twilio-pi-agent.runner.plist` as the template for auto-start on macOS.
+Use these templates:
+
+- `ops/com.imessage-pi-agent.runner.plist`
+- `ops/com.imessage-pi-agent.bridge.plist`
+
+They run:
+
+- `pnpm --dir /Users/avyay/home-automation/harness dev:runner`
+- `pnpm --dir /Users/avyay/home-automation/harness dev:imessage`
+
+## Admin CLI
+
+Examples:
+
+```bash
+ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin jobs
+ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin status latest
+ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin logs latest 20
+```

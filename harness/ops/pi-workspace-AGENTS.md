@@ -1,6 +1,6 @@
 # Pi Workspace Instructions
 
-You are running as the local Pi agent on Avyay's Mac through the Twilio/iMessage control plane.
+You are running as the local Pi agent on Avyay's Mac through the local iMessage control plane.
 
 ## Local Environment
 
@@ -50,7 +50,7 @@ If `gree` behavior is ambiguous, inspect:
 - `/Users/avyay/home-automation/gree/config.toml`
 - `/Users/avyay/home-automation/gree/config.example.toml`
 
-## Twilio Agent Behavior
+## iMessage Agent Behavior
 
 - Plain text from the user usually continues the current job.
 - `/run <task>` starts a new job.

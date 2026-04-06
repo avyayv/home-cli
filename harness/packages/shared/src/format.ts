@@ -1,7 +1,7 @@
 import { buildHelpText } from "./commands.js";
-import { Job, JobEvent, SmsCommand } from "./types.js";
+import { AgentCommand, Job, JobEvent } from "./types.js";
 
-export function formatInboundAck(command: SmsCommand, job?: Job): string {
+export function formatInboundAck(command: AgentCommand, job?: Job): string {
   if (command.type === "help") {
     return buildHelpText();
   }
@@ -24,7 +24,13 @@ export function formatJobStatus(job: Job, events: JobEvent[]): string {
 
 export function formatLogResponse(job: Job, events: JobEvent[]): string {
   const lines = events
-    .flatMap((event) => [event.stdoutChunk, event.stderrChunk].filter(Boolean) as string[])
+    .flatMap((event) => {
+      const chunks = [event.stdoutChunk, event.stderrChunk].filter(Boolean) as string[];
+      if (chunks.length > 0) {
+        return chunks;
+      }
+      return [`[${event.phase}] ${event.message}`];
+    })
     .slice(-5);
 
   if (lines.length === 0) {

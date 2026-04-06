@@ -1,5 +1,5 @@
 {
-  "name": "@twilio-pi-agent/shared",
+  "name": "@imessage-pi-agent/shared",
   "version": "0.1.0",
   "type": "module",
   "main": "src/index.ts",

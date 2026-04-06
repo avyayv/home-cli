@@ -93,7 +93,7 @@ export class ControlPlaneStore {
     const job = jobSchema.parse({
       jobId,
       jobNumber: nextNumber,
-      source: "sms",
+      source: "imessage",
       sender,
       command: payload.command,
       status: dangerous ? "awaiting_confirmation" : "queued",

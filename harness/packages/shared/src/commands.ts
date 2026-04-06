@@ -1,18 +1,18 @@
 import { randomUUID } from "node:crypto";
 import {
   abortCommandSchema,
+  AgentCommand,
   confirmCommandSchema,
   helpCommandSchema,
   jobsCommandSchema,
   logsCommandSchema,
   runCommandSchema,
-  SmsCommand,
   statusCommandSchema
 } from "./types.js";
 
 const whitespace = /\s+/;
 
-export function parseSmsCommand(rawText: string): SmsCommand {
+export function parseAgentCommand(rawText: string): AgentCommand {
   const trimmed = rawText.trim();
   if (!trimmed) {
     return helpCommandSchema.parse({ type: "help", rawText: rawText || "help" });
@@ -70,7 +70,7 @@ export function buildHelpText(): string {
   ].join("\n");
 }
 
-export function createCorrelationId(prefix = "sms"): string {
+export function createCorrelationId(prefix = "imessage"): string {
   return `${prefix}_${randomUUID()}`;
 }
 

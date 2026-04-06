@@ -1,14 +1,14 @@
 # Harness
 
-Twilio/iMessage-style local Pi/Codex runner for a single trusted phone number, now housed under `home-automation/harness`.
+Local iMessage-to-Pi/Codex runner for a single trusted handle, housed under `home-automation/harness`.
 
 ## Components
 
-- `apps/twilio-function`: inbound Twilio webhook and outbound SMS helpers
+- `apps/imessage-bridge`: local iMessage ingress/egress bridge using Messages.app and the local Messages database
 - `apps/mac-runner`: local daemon that polls jobs, runs Pi, and spawns Codex jobs
-- `apps/admin-cli`: local utility for enqueueing and inspecting jobs without SMS
+- `apps/admin-cli`: local utility for enqueueing and inspecting jobs without iMessage
 - `packages/shared`: schemas, command parsing, queue/state interfaces, and config
 
 ## Status
 
-Initial implementation scaffold with shared command model, Redis-backed control plane, runner, and Twilio webhook.
+Shared command model, Redis-backed control plane, supervised Pi runner, and local iMessage bridge.

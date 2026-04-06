@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This directory contains the local Twilio/iMessage-to-Pi execution harness. Inbound messages land on Twilio, state lives in Upstash Redis, and actual execution happens locally on this Mac through the supervised runner in this folder.
+This directory contains the local iMessage-to-Pi execution harness. Inbound messages are read locally from Messages, state lives in Upstash Redis, and actual execution happens locally on this Mac through the supervised runner in this folder.
 
 ## Monorepo Context
 
@@ -11,39 +11,39 @@ This repo is now organized as:
 - `cli/gree`
   - Python HVAC CLI
 - `harness`
-  - Twilio/Pi/Codex harness
+  - iMessage/Pi/Codex harness
 
 The first local automation CLI is `gree`, and it is globally available on this machine.
 
 ## Current Architecture
 
-- `twilio-serverless/`
-  - Twilio Function ingress for inbound SMS
-  - deployed endpoint: `https://twilio-pi-agent-8648-dev.twil.io/inbound-sms`
 - `packages/shared/`
   - schemas, config, command parsing, formatting, Redis control-plane store
 - `apps/mac-runner/`
   - local runner daemon
   - runs Pi against local Ollama
   - exposes `spawn_codex_job`
-- `apps/twilio-function/`
-  - local TypeScript version of inbound SMS handling logic
+- `apps/imessage-bridge/`
+  - local Messages bridge
+  - polls the local Messages database for inbound texts
+  - sends replies through Messages.app using AppleScript
 - `apps/admin-cli/`
   - local control/debug CLI
 
 ## Runtime Topology
 
-- Twilio receives inbound SMS.
-- Twilio Function validates sender and writes commands/jobs into Upstash Redis.
+- Messages.app receives inbound iMessages.
+- The local iMessage bridge polls the Messages database and writes commands/jobs into Upstash Redis.
 - The local Mac runner polls Redis and executes jobs.
 - Pi uses local Ollama at:
   - `http://127.0.0.1:11434/v1`
 - Current local model:
   - `gemma4:31b`
-- Runner is supervised by macOS `launchd`:
-  - agent: `/Users/avyay/Library/LaunchAgents/com.avyay.twilio-pi-agent-runner.plist`
-  - stdout log: `/Users/avyay/Library/Logs/twilio-pi-agent-runner.log`
-  - stderr log: `/Users/avyay/Library/Logs/twilio-pi-agent-runner.err.log`
+- Services are supervised by macOS `launchd`:
+  - runner agent: `/Users/avyay/Library/LaunchAgents/com.avyay.imessage-pi-agent-runner.plist`
+  - bridge agent: `/Users/avyay/Library/LaunchAgents/com.avyay.imessage-pi-agent-bridge.plist`
+  - runner stdout log: `/Users/avyay/Library/Logs/imessage-pi-agent-runner.log`
+  - bridge stdout log: `/Users/avyay/Library/Logs/imessage-pi-agent-bridge.out.log`
 
 ## Job Model
 
@@ -52,7 +52,7 @@ The first local automation CLI is `gree`, and it is globally available on this m
 - `/jobs` lists jobs from the last 24 hours.
 - `/jobs <number>` switches the current job.
 - `/status`, `/logs`, `/abort`, `/confirm` are control commands.
-- Jobs are numbered per sender.
+- Jobs are numbered per iMessage handle.
 - Multiple jobs can exist in parallel.
 
 ## Current Working State
@@ -118,15 +118,17 @@ If device selection is ambiguous, inspect:
 - `/Users/avyay/home-automation/cli/gree/gree/config.toml`
 - `/Users/avyay/home-automation/cli/gree/gree/config.example.toml`
 
-## Twilio Notes
+## iMessage Notes
 
-- Twilio number:
-  - `+18776768809`
-- Allowed inbound senders currently configured:
-  - `+18777804236`
+- Current trusted handle:
   - `+15109355552`
-- Inbound webhook path is working.
-- Outbound toll-free SMS replies still depend on Twilio toll-free verification. Earlier live tests hit Twilio error `30032` before verification.
+- The bridge depends on:
+  - Messages.app being signed in and working normally
+  - Full Disk Access for the terminal/runner so the local Messages database can be read
+  - AppleScript automation permission to control Messages.app for outbound replies
+- Current database candidates:
+  - `/Users/avyay/Library/Messages/chat.db`
+  - `/Users/avyay/Library/Group Containers/com.apple.messages/Library/Messages/chat.db`
 
 ## Local Operations
 
@@ -139,13 +141,16 @@ pnpm --dir /Users/avyay/home-automation/harness build
 ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin jobs
 ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin status latest
 ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin logs latest 20
+pnpm --dir /Users/avyay/home-automation/harness dev:imessage
 ```
 
 Service checks:
 
 ```bash
-launchctl print gui/$(id -u)/com.avyay.twilio-pi-agent-runner
-tail -f /Users/avyay/Library/Logs/twilio-pi-agent-runner.log
+launchctl print gui/$(id -u)/com.avyay.imessage-pi-agent-runner
+launchctl print gui/$(id -u)/com.avyay.imessage-pi-agent-bridge
+tail -f /Users/avyay/Library/Logs/imessage-pi-agent-runner.log
+tail -f /Users/avyay/Library/Logs/imessage-pi-agent-bridge.out.log
 ```
 
 ## Relevant Files
@@ -155,5 +160,5 @@ tail -f /Users/avyay/Library/Logs/twilio-pi-agent-runner.log
 - `/Users/avyay/home-automation/harness/packages/shared/src/redis-store.ts`
 - `/Users/avyay/home-automation/harness/apps/mac-runner/src/pi-runner.ts`
 - `/Users/avyay/home-automation/harness/apps/mac-runner/src/index.ts`
-- `/Users/avyay/home-automation/harness/apps/twilio-function/src/handler.ts`
-- `/Users/avyay/home-automation/harness/twilio-serverless/functions/inbound-sms.protected.js`
+- `/Users/avyay/home-automation/harness/apps/imessage-bridge/src/handler.ts`
+- `/Users/avyay/home-automation/harness/apps/imessage-bridge/src/imessage.ts`

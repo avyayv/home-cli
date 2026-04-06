@@ -6,7 +6,7 @@
     "lib": ["ES2022"],
     "baseUrl": ".",
     "paths": {
-      "@twilio-pi-agent/shared": ["packages/shared/src/index.ts"]
+      "@imessage-pi-agent/shared": ["packages/shared/src/index.ts"]
     },
     "strict": true,
     "esModuleInterop": true,

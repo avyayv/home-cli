@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { parseSmsCommand } from "./commands.js";
+import { parseAgentCommand } from "./commands.js";
 
-describe("parseSmsCommand", () => {
+describe("parseAgentCommand", () => {
   it("parses run commands", () => {
-    expect(parseSmsCommand("/run inspect the repo")).toMatchObject({
+    expect(parseAgentCommand("/run inspect the repo")).toMatchObject({
       type: "run",
       task: "inspect the repo",
       newJob: true
@@ -11,14 +11,14 @@ describe("parseSmsCommand", () => {
   });
 
   it("defaults status target to latest", () => {
-    expect(parseSmsCommand("/status")).toMatchObject({
+    expect(parseAgentCommand("/status")).toMatchObject({
       type: "status",
       target: "latest"
     });
   });
 
   it("parses logs with line count", () => {
-    expect(parseSmsCommand("/logs 3 50")).toMatchObject({
+    expect(parseAgentCommand("/logs 3 50")).toMatchObject({
       type: "logs",
       target: "3",
       lines: 50
@@ -26,7 +26,7 @@ describe("parseSmsCommand", () => {
   });
 
   it("treats plain text as run input", () => {
-    expect(parseSmsCommand("wat")).toMatchObject({
+    expect(parseAgentCommand("wat")).toMatchObject({
       type: "run",
       task: "wat",
       newJob: false

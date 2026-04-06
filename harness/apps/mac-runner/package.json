@@ -1,5 +1,5 @@
 {
-  "name": "@twilio-pi-agent/mac-runner",
+  "name": "@imessage-pi-agent/mac-runner",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
   "dependencies": {
     "@mariozechner/pi-coding-agent": "^0.65.0",
     "@mariozechner/pi-ai": "^0.65.0",
-    "@twilio-pi-agent/shared": "workspace:*",
+    "@imessage-pi-agent/shared": "workspace:*",
     "dotenv": "^17.2.3",
     "execa": "^9.6.0"
   }

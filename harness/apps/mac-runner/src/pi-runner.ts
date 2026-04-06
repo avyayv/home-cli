@@ -3,8 +3,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import { execa } from "execa";
-import type { Job } from "@twilio-pi-agent/shared";
-import { ControlPlaneStore } from "@twilio-pi-agent/shared";
+import type { Job } from "@imessage-pi-agent/shared";
+import { ControlPlaneStore } from "@imessage-pi-agent/shared";
 import { Type, type AssistantMessage } from "@mariozechner/pi-ai";
 
 type PiSdk = typeof import("@mariozechner/pi-coding-agent");
@@ -14,6 +14,19 @@ const workspaceAgentsTemplatePath = path.resolve(__dirname, "../../../ops/pi-wor
 
 export type PiRunResult = {
   summary: string;
+};
+
+type ToolStartTelemetry = {
+  message: string;
+  details: Record<string, unknown>;
+  stdoutChunk?: string;
+};
+
+type ToolEndTelemetry = {
+  message: string;
+  details: Record<string, unknown>;
+  stdoutChunk?: string;
+  stderrChunk?: string;
 };
 
 type LocalProviderConfig = {
@@ -64,6 +77,105 @@ export function extractAssistantText(messages: AssistantMessage[]): string {
       .map((item) => item.text)
       .join("") ?? "Completed"
   );
+}
+
+const MAX_DETAIL_CHARS = 500;
+const MAX_LOG_CHARS = 4000;
+
+function truncateText(value: string, limit: number): string {
+  return value.length > limit ? `${value.slice(0, Math.max(0, limit - 3))}...` : value;
+}
+
+function collectTextContent(value: unknown): string | undefined {
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const content = (value as { content?: unknown }).content;
+  if (!Array.isArray(content)) {
+    return undefined;
+  }
+
+  const parts = content
+    .map((item) => {
+      if (!item || typeof item !== "object") {
+        return undefined;
+      }
+      const text = (item as { text?: unknown }).text;
+      return typeof text === "string" ? text : undefined;
+    })
+    .filter((item): item is string => Boolean(item));
+
+  return parts.length > 0 ? parts.join("") : undefined;
+}
+
+function stringifyUnknown(value: unknown, limit: number): string | undefined {
+  if (typeof value === "string") {
+    return truncateText(value, limit);
+  }
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  try {
+    return truncateText(JSON.stringify(value, null, 2), limit);
+  } catch {
+    return truncateText(String(value), limit);
+  }
+}
+
+export function buildToolStartTelemetry(event: { toolName?: unknown; args?: unknown }): ToolStartTelemetry {
+  const toolName = typeof event.toolName === "string" ? event.toolName : "unknown";
+  const args = event.args;
+
+  if (toolName === "bash" && args && typeof args === "object" && typeof (args as { command?: unknown }).command === "string") {
+    const command = (args as { command: string }).command;
+    return {
+      message: `Tool started: bash (${truncateText(command.replace(/\s+/g, " ").trim(), 100)})`,
+      details: {
+        argsPreview: truncateText(command, MAX_DETAIL_CHARS),
+        timeout: typeof (args as { timeout?: unknown }).timeout === "number" ? (args as { timeout: number }).timeout : undefined
+      },
+      stdoutChunk: `$ ${truncateText(command, MAX_LOG_CHARS)}`
+    };
+  }
+
+  return {
+    message: `Tool started: ${toolName}`,
+    details: {
+      argsPreview: stringifyUnknown(args, MAX_DETAIL_CHARS)
+    }
+  };
+}
+
+export function buildToolEndTelemetry(event: {
+  toolName?: unknown;
+  result?: unknown;
+  isError?: unknown;
+}): ToolEndTelemetry {
+  const toolName = typeof event.toolName === "string" ? event.toolName : "unknown";
+  const result = event.result;
+  const textResult =
+    (result && typeof result === "object" && typeof (result as { stdout?: unknown }).stdout === "string"
+      ? (result as { stdout: string }).stdout
+      : undefined) ??
+    collectTextContent(result) ??
+    stringifyUnknown(result, MAX_LOG_CHARS);
+  const stderrResult =
+    result && typeof result === "object" && typeof (result as { stderr?: unknown }).stderr === "string"
+      ? truncateText((result as { stderr: string }).stderr, MAX_LOG_CHARS)
+      : undefined;
+
+  return {
+    message: `Tool finished: ${toolName}`,
+    details: {
+      isError: Boolean(event.isError),
+      resultPreview: textResult ? truncateText(textResult, MAX_DETAIL_CHARS) : undefined
+    },
+    stdoutChunk: textResult ? truncateText(textResult, MAX_LOG_CHARS) : undefined,
+    stderrChunk: stderrResult
+  };
 }
 
 export class PiRunner {
@@ -192,26 +304,31 @@ export class PiRunner {
       }
 
       if (event.type === "tool_execution_start") {
+        const telemetry = buildToolStartTelemetry(event as { toolName?: unknown; args?: unknown });
         await this.store.appendEvent(job.jobId, {
           eventId: randomUUID(),
           jobId: job.jobId,
           timestamp: new Date().toISOString(),
           phase: "tool",
           kind: "tool_start",
-          message: `Tool started: ${String((event as any).toolName ?? "unknown")}`,
-          details: {}
+          message: telemetry.message,
+          details: telemetry.details,
+          stdoutChunk: telemetry.stdoutChunk
         });
       }
 
       if (event.type === "tool_execution_end") {
+        const telemetry = buildToolEndTelemetry(event as { toolName?: unknown; result?: unknown; isError?: unknown });
         await this.store.appendEvent(job.jobId, {
           eventId: randomUUID(),
           jobId: job.jobId,
           timestamp: new Date().toISOString(),
           phase: "tool",
           kind: "tool_end",
-          message: `Tool finished: ${String((event as any).toolName ?? "unknown")}`,
-          details: { isError: Boolean((event as any).isError) }
+          message: telemetry.message,
+          details: telemetry.details,
+          stdoutChunk: telemetry.stdoutChunk,
+          stderrChunk: telemetry.stderrChunk
         });
       }
     });

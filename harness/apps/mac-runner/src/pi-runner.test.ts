@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { AssistantMessage } from "@mariozechner/pi-ai";
-import { createLocalProviderConfig, extractAssistantText } from "./pi-runner.js";
+import {
+  buildToolEndTelemetry,
+  buildToolStartTelemetry,
+  createLocalProviderConfig,
+  extractAssistantText
+} from "./pi-runner.js";
 
 describe("createLocalProviderConfig", () => {
   it("builds a local openai-compatible provider config", () => {
@@ -30,5 +35,37 @@ describe("extractAssistantText", () => {
       }
     ];
     expect(extractAssistantText(messages)).toBe("hello world");
+  });
+});
+
+describe("buildToolStartTelemetry", () => {
+  it("captures bash commands for log visibility", () => {
+    const telemetry = buildToolStartTelemetry({
+      toolName: "bash",
+      args: { command: "gree mode heat && gree temp 70", timeout: 120000 }
+    });
+
+    expect(telemetry.message).toContain("Tool started: bash");
+    expect(telemetry.stdoutChunk).toContain("gree mode heat && gree temp 70");
+    expect(telemetry.details.argsPreview).toContain("gree mode heat");
+  });
+});
+
+describe("buildToolEndTelemetry", () => {
+  it("extracts text result content for logs", () => {
+    const telemetry = buildToolEndTelemetry({
+      toolName: "bash",
+      isError: false,
+      result: {
+        content: [
+          { type: "text", text: "ok\n" },
+          { type: "text", text: "set to heat" }
+        ]
+      }
+    });
+
+    expect(telemetry.message).toBe("Tool finished: bash");
+    expect(telemetry.stdoutChunk).toContain("set to heat");
+    expect(telemetry.details.resultPreview).toContain("ok");
   });
 });

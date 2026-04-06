@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.avyay.imessage-pi-agent-bridge</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/zsh</string>
+    <string>/Users/avyay/home-automation/harness/scripts/start-imessage-bridge-terminal.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>HOME</key>
+    <string>/Users/avyay</string>
+    <key>PATH</key>
+    <string>/Users/avyay/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>WorkingDirectory</key>
+  <string>/Users/avyay/home-automation/harness</string>
+  <key>StandardOutPath</key>
+  <string>/Users/avyay/Library/Logs/imessage-pi-agent-bridge-launcher.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/avyay/Library/Logs/imessage-pi-agent-bridge-launcher.err.log</string>
+</dict>
+</plist>

@@ -86,7 +86,7 @@ export const jobsCommandSchema = baseCommandSchema.extend({
   target: z.string().optional()
 });
 
-export const smsCommandSchema = z.discriminatedUnion("type", [
+export const agentCommandSchema = z.discriminatedUnion("type", [
   runCommandSchema,
   statusCommandSchema,
   logsCommandSchema,
@@ -95,14 +95,14 @@ export const smsCommandSchema = z.discriminatedUnion("type", [
   helpCommandSchema,
   jobsCommandSchema
 ]);
-export type SmsCommand = z.infer<typeof smsCommandSchema>;
+export type AgentCommand = z.infer<typeof agentCommandSchema>;
 
 export const jobSchema = z.object({
   jobId: z.string().min(1),
   jobNumber: z.number().int().positive(),
-  source: z.literal("sms"),
+  source: z.enum(["imessage", "admin"]),
   sender: z.string().min(1),
-  command: smsCommandSchema,
+  command: agentCommandSchema,
   status: jobStatusSchema,
   summary: z.string().default(""),
   requiresConfirmation: z.boolean().default(false),
@@ -133,7 +133,7 @@ export type JobEvent = z.infer<typeof jobEventSchema>;
 
 export const enqueueCommandSchema = z.object({
   sender: z.string().min(1),
-  command: smsCommandSchema,
+  command: agentCommandSchema,
   receivedAt: z.string(),
   correlationId: z.string().min(1)
 });

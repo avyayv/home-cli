@@ -1,10 +1,18 @@
 import "./env.js";
 import { randomUUID } from "node:crypto";
 import process from "node:process";
-import { ControlPlaneStore, Job, loadConfig } from "@twilio-pi-agent/shared";
+import { ControlPlaneStore, Job, loadConfig } from "@imessage-pi-agent/shared";
 import { PiRunner } from "./pi-runner.js";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const homeBin = process.env.HOME ? `${process.env.HOME}/.local/bin` : undefined;
+
+if (homeBin) {
+  const pathEntries = (process.env.PATH ?? "").split(":").filter(Boolean);
+  if (!pathEntries.includes(homeBin)) {
+    process.env.PATH = [homeBin, ...pathEntries].join(":");
+  }
+}
 
 async function runLoop(): Promise<void> {
   const cfg = loadConfig();
