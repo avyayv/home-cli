@@ -1,6 +1,6 @@
 # Harness
 
-Local iMessage-to-Pi/Codex runner for a single trusted handle, housed under `home-automation/harness`.
+Primary local Pi harness for this machine. It receives iMessages from a trusted handle, runs Pi/Codex locally, and can call local CLIs from the monorepo such as `gree`.
 
 ## Components
 
@@ -8,6 +8,12 @@ Local iMessage-to-Pi/Codex runner for a single trusted handle, housed under `hom
 - `apps/mac-runner`: local daemon that polls jobs, runs Pi, and spawns Codex jobs
 - `apps/admin-cli`: local utility for enqueueing and inspecting jobs without iMessage
 - `packages/shared`: schemas, command parsing, queue/state interfaces, and config
+
+## Role In The Monorepo
+
+- `harness` is the main system.
+- `cli/` contains standalone tools that the harness can invoke.
+- `cli/gree` is only the first CLI, not the center of the repo.
 
 ## Status
 

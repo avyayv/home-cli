@@ -2,13 +2,17 @@
 
 ## Layout
 
-- `cli/gree`
-  - Python CLI for discovering and controlling GREE HVAC units over the LAN
 - `harness`
-  - Twilio/iMessage-to-Pi local execution harness
+  - primary local iMessage-to-Pi execution harness
+- `cli/`
+  - standalone automation CLIs the harness can call
+- `cli/gree`
+  - first CLI for discovering and controlling GREE HVAC units over the LAN
 
 ## GREE
 
+- `gree` is only one CLI under `cli/`.
+- Expect more CLIs to be added alongside it.
 - Global CLI command:
   - `gree`
 - Source lives in:
@@ -43,10 +47,15 @@ gree config show
 
 The harness runner is supervised by macOS `launchd` using:
 
-- `/Users/avyay/Library/LaunchAgents/com.avyay.twilio-pi-agent-runner.plist`
+- `/Users/avyay/Library/LaunchAgents/com.avyay.imessage-pi-agent-runner.plist`
+
+The iMessage bridge is launched at login using:
+
+- `/Users/avyay/Library/LaunchAgents/com.avyay.imessage-pi-agent-bridge.plist`
 
 ## Operational Notes
 
+- Treat `harness` as the primary product in this repo.
 - The harness is intended to be able to act outside its per-job workspace when needed.
 - Pi jobs launched through the harness get an `AGENTS.md` placed into their workspace so they know about `gree` and the local machine setup.
 - For harness-specific implementation details, read:

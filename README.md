@@ -1,13 +1,15 @@
 # Home Automation
 
-Monorepo for local home automation tools and the Mac-hosted agent harness that drives them.
+Monorepo for a Mac-hosted Pi harness plus local home automation CLIs.
 
 ## Layout
 
-- `cli/gree`
-  - standalone Python CLI for discovering and controlling GREE HVAC units over the LAN
 - `harness`
-  - local iMessage-to-Pi/Codex harness running on this Mac
+  - primary local iMessage-to-Pi/Codex harness running on this Mac
+- `cli/`
+  - standalone automation CLIs that the harness can call
+- `cli/gree`
+  - first CLI: GREE HVAC discovery and control over the LAN
 
 ## Quick Start
 
@@ -15,14 +17,16 @@ Monorepo for local home automation tools and the Mac-hosted agent harness that d
 uv sync --group dev
 ```
 
-The primary CLI is available as:
+Main local agent system:
 
 ```bash
-gree --help
+cd harness
+pnpm dev:runner
+pnpm dev:imessage
 ```
 
 ## Docs
 
-- GREE CLI usage and configuration: [cli/gree/README.md](/Users/avyay/home-automation/cli/gree/README.md)
-- Harness architecture and messaging flow: [harness/README.md](/Users/avyay/home-automation/harness/README.md)
+- Harness overview and messaging flow: [harness/README.md](/Users/avyay/home-automation/harness/README.md)
 - Harness setup details: [harness/docs/SETUP.md](/Users/avyay/home-automation/harness/docs/SETUP.md)
+- GREE CLI usage and configuration: [cli/gree/README.md](/Users/avyay/home-automation/cli/gree/README.md)
