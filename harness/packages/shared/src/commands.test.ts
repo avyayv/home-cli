@@ -6,7 +6,18 @@ describe("parseAgentCommand", () => {
     expect(parseAgentCommand("/run inspect the repo")).toMatchObject({
       type: "run",
       task: "inspect the repo",
-      newJob: true
+      newJob: true,
+      loggingEnabled: false
+    });
+  });
+
+  it("parses logging commands with an interval", () => {
+    expect(parseAgentCommand("/logging 7 inspect the repo")).toMatchObject({
+      type: "run",
+      task: "inspect the repo",
+      newJob: false,
+      loggingEnabled: true,
+      loggingIntervalSeconds: 7
     });
   });
 
@@ -29,7 +40,8 @@ describe("parseAgentCommand", () => {
     expect(parseAgentCommand("wat")).toMatchObject({
       type: "run",
       task: "wat",
-      newJob: false
+      newJob: false,
+      loggingEnabled: false
     });
   });
 });

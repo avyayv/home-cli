@@ -14,6 +14,8 @@ const baseEnvSchema = z.object({
   IMESSAGE_POLL_INTERVAL_MS: z.coerce.number().int().positive().default(4000),
   IMESSAGE_SYNC_TIMEOUT_MS: z.coerce.number().int().positive().default(120000),
   IMESSAGE_SYNC_POLL_MS: z.coerce.number().int().positive().default(1000),
+  IMESSAGE_LOG_INTERVAL_MS: z.coerce.number().int().positive().default(5000),
+  IMESSAGE_LOG_LINES_PER_UPDATE: z.coerce.number().int().positive().max(20).default(5),
   IMESSAGE_SERVICE_ID: z.string().optional(),
   JOB_QUEUE_KEY: z.string().default("imessage-pi-agent:jobs"),
   JOB_KEY_PREFIX: z.string().default("imessage-pi-agent:job:"),

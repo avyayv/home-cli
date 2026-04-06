@@ -1,11 +1,12 @@
 import "./env.js";
 import { appendFile } from "node:fs/promises";
 import {
+  ControlPlaneStore,
   createCorrelationId,
   getAllowedIMessageHandles,
   loadConfig
 } from "@imessage-pi-agent/shared";
-import { handleInboundIMessage } from "./handler.js";
+import { formatIncrementalLogUpdate, handleInboundIMessage } from "./handler.js";
 import {
   discoverIMessageServiceId,
   getBridgeStatePath,
@@ -29,6 +30,7 @@ async function runLoop(): Promise<void> {
   const allowedHandles = getAllowedIMessageHandles(config);
   const statePath = getBridgeStatePath(config);
   const serviceId = config.IMESSAGE_SERVICE_ID ?? (await discoverIMessageServiceId());
+  const store = new ControlPlaneStore(config);
   let state = await readBridgeState(statePath);
 
   for (;;) {
@@ -41,10 +43,20 @@ async function runLoop(): Promise<void> {
       const messages = await pollIncomingMessages(dbPath, allowedHandles, state.lastSeenRowId);
       for (const message of messages) {
         state.lastSeenRowId = Math.max(state.lastSeenRowId, message.rowId);
-        const reply = await handleInboundIMessage({ from: message.from, text: message.text });
-        if (reply.trim()) {
-          await sendIMessage(message.from, reply, serviceId);
+        const reply = await handleInboundIMessage(
+          { from: message.from, text: message.text },
+          { config, store }
+        );
+        if (reply.mode === "reply") {
+          if (reply.message.trim()) {
+            await sendIMessage(message.from, reply.message, serviceId);
+          }
+          continue;
         }
+        if (reply.startMessage.trim()) {
+          await sendIMessage(message.from, reply.startMessage, serviceId);
+        }
+        await streamJobLogs(message.from, reply.job.jobId, reply.intervalMs, store, config, serviceId);
       }
       await writeBridgeState(statePath, state);
     } catch (error) {
@@ -55,6 +67,66 @@ async function runLoop(): Promise<void> {
     }
 
     await sleep(config.IMESSAGE_POLL_INTERVAL_MS);
+  }
+}
+
+async function streamJobLogs(
+  recipient: string,
+  jobId: string,
+  intervalMs: number,
+  store: ControlPlaneStore,
+  config: ReturnType<typeof loadConfig>,
+  serviceId: string
+): Promise<void> {
+  const seenEventIds = new Set<string>();
+  let lastFlushAt = Date.now();
+
+  for (;;) {
+    const job = await store.getJob(jobId);
+    if (!job) {
+      await sendIMessage(recipient, "The job disappeared before I could stream logs.", serviceId);
+      return;
+    }
+
+    const events = await store.getEvents(jobId, 200);
+    const unseenEvents = events.filter((event) => !seenEventIds.has(event.eventId));
+    for (const event of unseenEvents) {
+      seenEventIds.add(event.eventId);
+    }
+
+    const shouldFlushLogs = unseenEvents.length > 0 && Date.now() - lastFlushAt >= intervalMs;
+    if (shouldFlushLogs) {
+      const update = formatIncrementalLogUpdate(job, unseenEvents, config.IMESSAGE_LOG_LINES_PER_UPDATE);
+      if (update) {
+        await sendIMessage(recipient, update, serviceId);
+      }
+      lastFlushAt = Date.now();
+    }
+
+    if (job.status === "completed") {
+      const trailing = formatIncrementalLogUpdate(job, unseenEvents, config.IMESSAGE_LOG_LINES_PER_UPDATE);
+      if (trailing && !shouldFlushLogs) {
+        await sendIMessage(recipient, trailing, serviceId);
+      }
+      await sendIMessage(recipient, job.summary?.trim() || `Job #${job.jobNumber} completed.`, serviceId);
+      return;
+    }
+
+    if (job.status === "failed") {
+      const trailing = formatIncrementalLogUpdate(job, unseenEvents, config.IMESSAGE_LOG_LINES_PER_UPDATE);
+      if (trailing && !shouldFlushLogs) {
+        await sendIMessage(recipient, trailing, serviceId);
+      }
+      await sendIMessage(recipient, `Job #${job.jobNumber} failed: ${job.summary || "Unknown error."}`, serviceId);
+      return;
+    }
+
+    if (job.status === "aborted") {
+      await sendIMessage(recipient, `Job #${job.jobNumber} was aborted.`, serviceId);
+      return;
+    }
+
+    await sleep(config.IMESSAGE_SYNC_POLL_MS);
   }
 }
 

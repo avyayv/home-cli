@@ -19,6 +19,8 @@
    - `IMESSAGE_DB_PATH`
    - `IMESSAGE_STATE_PATH`
    - `IMESSAGE_POLL_INTERVAL_MS`
+   - `IMESSAGE_LOG_INTERVAL_MS`
+   - `IMESSAGE_LOG_LINES_PER_UPDATE`
    - `IMESSAGE_SERVICE_ID` if you want to pin the Messages service explicitly
 
 ## Local Dev
@@ -59,3 +61,10 @@ ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:ad
 ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin status latest
 ADMIN_SENDER=+15109355552 pnpm --dir /Users/avyay/home-automation/harness dev:admin logs latest 20
 ```
+
+## iMessage Commands
+
+- Plain text continues the current job and waits for the final answer.
+- `/logging [seconds] <task>` continues the current job and sends periodic log updates.
+- `/run <task>` starts a new job.
+- `/jobs`, `/status`, `/logs`, `/abort`, and `/confirm` remain control commands.

@@ -53,7 +53,9 @@ export const baseCommandSchema = z.object({
 export const runCommandSchema = baseCommandSchema.extend({
   type: z.literal("run"),
   task: z.string().min(1),
-  newJob: z.boolean().default(false)
+  newJob: z.boolean().default(false),
+  loggingEnabled: z.boolean().default(false),
+  loggingIntervalSeconds: z.number().int().positive().max(300).optional()
 });
 
 export const statusCommandSchema = baseCommandSchema.extend({

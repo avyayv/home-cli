@@ -48,6 +48,7 @@ The first local automation CLI is `gree`, and it is globally available on this m
 ## Job Model
 
 - Plain text continues the current job.
+- `/logging [seconds] <task>` continues the current job and streams log updates before the final result.
 - `/run <task>` starts a new job and makes it current.
 - `/jobs` lists jobs from the last 24 hours.
 - `/jobs <number>` switches the current job.
@@ -67,6 +68,7 @@ The first local automation CLI is `gree`, and it is globally available on this m
 ## Important Fixes Applied
 
 - current-job semantics for plain text
+- opt-in incremental log streaming with `/logging [seconds] <task>`
 - explicit new-job creation with `/run`
 - `/jobs` listing and switching
 - configurable Pi prompt timeout via `PI_PROMPT_TIMEOUT_MS`, default `300000`

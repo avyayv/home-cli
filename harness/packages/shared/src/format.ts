@@ -23,21 +23,23 @@ export function formatJobStatus(job: Job, events: JobEvent[]): string {
 }
 
 export function formatLogResponse(job: Job, events: JobEvent[]): string {
-  const lines = events
-    .flatMap((event) => {
-      const chunks = [event.stdoutChunk, event.stderrChunk].filter(Boolean) as string[];
-      if (chunks.length > 0) {
-        return chunks;
-      }
-      return [`[${event.phase}] ${event.message}`];
-    })
-    .slice(-5);
+  const lines = collectEventLogLines(events).slice(-5);
 
   if (lines.length === 0) {
     return `No logs yet for job #${job.jobNumber}.`;
   }
 
   return [`Logs for job #${job.jobNumber}:`, ...lines].join("\n");
+}
+
+export function collectEventLogLines(events: JobEvent[]): string[] {
+  return events.flatMap((event) => {
+    const chunks = [event.stdoutChunk, event.stderrChunk].filter(Boolean) as string[];
+    if (chunks.length > 0) {
+      return chunks;
+    }
+    return [`[${event.phase}] ${event.message}`];
+  });
 }
 
 export function formatJobsList(jobs: Job[], currentJobId: string | null): string {

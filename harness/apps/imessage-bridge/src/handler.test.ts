@@ -15,6 +15,8 @@ function makeConfig() {
     IMESSAGE_POLL_INTERVAL_MS: 4000,
     IMESSAGE_SYNC_TIMEOUT_MS: 200,
     IMESSAGE_SYNC_POLL_MS: 1,
+    IMESSAGE_LOG_INTERVAL_MS: 5000,
+    IMESSAGE_LOG_LINES_PER_UPDATE: 5,
     JOB_QUEUE_KEY: "jobs",
     JOB_KEY_PREFIX: "job:",
     EVENT_KEY_PREFIX: "events:",
@@ -124,7 +126,7 @@ class FakeStore {
 describe("handleInboundIMessage", () => {
   it("rejects unauthorized handles", async () => {
     const result = await handleInboundIMessage({ from: "+19999999999", text: "run hello" }, { config: makeConfig() });
-    expect(result).toBe("Unauthorized.");
+    expect(result).toEqual({ mode: "reply", message: "Unauthorized." });
   });
 
   it("returns help for /help", async () => {
@@ -132,7 +134,10 @@ describe("handleInboundIMessage", () => {
       { from: "+15109355552", text: "/help" },
       { config: makeConfig(), store: new FakeStore() as never }
     );
-    expect(result).toContain("Plain text goes to the current job.");
+    expect(result.mode).toBe("reply");
+    if (result.mode === "reply") {
+      expect(result.message).toContain("Plain text goes to the current job.");
+    }
   });
 
   it("queues plain text into the current job model", async () => {
@@ -149,7 +154,7 @@ describe("handleInboundIMessage", () => {
       { from: "+15109355552", text: "inspect this repo" },
       { config: makeConfig(), store: store as never, sleep: async () => {} }
     );
-    expect(result).toBe("Finished the task.");
+    expect(result).toEqual({ mode: "reply", message: "Finished the task." });
     expect(store.jobs.size).toBe(1);
   });
 
@@ -168,7 +173,7 @@ describe("handleInboundIMessage", () => {
       { from: "+15109355552", text: "do a thing" },
       { config: makeConfig(), store: store as never, sleep: async () => {} }
     );
-    expect(result).toBe("Job #1 failed: boom");
+    expect(result).toEqual({ mode: "reply", message: "Job #1 failed: boom" });
   });
 
   it("falls back to a progress message when the job takes too long", async () => {
@@ -181,14 +186,14 @@ describe("handleInboundIMessage", () => {
       { from: "+15109355552", text: "long task" },
       { config: makeConfig(), store: store as never, sleep }
     );
-    expect(result).toBe("Still working on job #1. Reply /status for progress.");
+    expect(result).toEqual({ mode: "reply", message: "Still working on job #1. Reply /status for progress." });
   });
 
   it("switches current job by /jobs number", async () => {
     const store = new FakeStore();
     await store.enqueuePrompt({
       sender: "+15109355552",
-      command: { type: "run", rawText: "first", task: "first", newJob: false },
+      command: { type: "run", rawText: "first", task: "first", newJob: false, loggingEnabled: false },
       correlationId: "seed"
     });
     store.jobs.set("job-00000002", {
@@ -196,7 +201,7 @@ describe("handleInboundIMessage", () => {
       jobNumber: 2,
       source: "imessage",
       sender: "+15109355552",
-      command: { type: "run", rawText: "/run second", task: "second", newJob: true },
+      command: { type: "run", rawText: "/run second", task: "second", newJob: true, loggingEnabled: false },
       status: "running",
       summary: "Working",
       requiresConfirmation: false,
@@ -210,6 +215,26 @@ describe("handleInboundIMessage", () => {
       { from: "+15109355552", text: "/jobs 2" },
       { config: makeConfig(), store: store as never }
     );
-    expect(result).toContain("Current job is now #2.");
+    expect(result).toEqual({ mode: "reply", message: "Current job is now #2." });
+  });
+
+  it("returns stream mode for logging prompts", async () => {
+    const store = new FakeStore();
+    const result = await handleInboundIMessage(
+      { from: "+15109355552", text: "/logging 7 inspect the repo" },
+      { config: makeConfig(), store: store as never, sleep: async () => {} }
+    );
+
+    expect(result.mode).toBe("stream");
+    if (result.mode === "stream") {
+      expect(result.job.jobNumber).toBe(1);
+      expect(result.intervalMs).toBe(7000);
+      expect(result.startMessage).toBe("Streaming logs for job #1 every 7s.");
+      expect(result.job.command).toMatchObject({
+        type: "run",
+        task: "inspect the repo",
+        loggingEnabled: true
+      });
+    }
   });
 });

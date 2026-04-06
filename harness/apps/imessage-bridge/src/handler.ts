@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import {
   buildHelpText,
+  collectEventLogLines,
   ControlPlaneStore,
   createCorrelationId,
   formatJobsList,
@@ -8,6 +9,7 @@ import {
   formatLogResponse,
   getAllowedIMessageHandles,
   Job,
+  JobEvent,
   loadConfig,
   parseAgentCommand
 } from "@imessage-pi-agent/shared";
@@ -16,6 +18,18 @@ export type InboundMessage = {
   from: string;
   text: string;
 };
+
+export type InboundReply =
+  | {
+      mode: "reply";
+      message: string;
+    }
+  | {
+      mode: "stream";
+      job: Job;
+      intervalMs: number;
+      startMessage: string;
+    };
 
 type StoreLike = Pick<
   ControlPlaneStore,
@@ -34,14 +48,14 @@ type StoreLike = Pick<
 export async function handleInboundIMessage(
   input: InboundMessage,
   deps?: { config?: ReturnType<typeof loadConfig>; store?: StoreLike; sleep?: (ms: number) => Promise<void> }
-): Promise<string> {
+): Promise<InboundReply> {
   const cfg = deps?.config ?? loadConfig();
   const from = input.from.trim();
   const text = input.text.trim();
   const allowedHandles = getAllowedIMessageHandles(cfg);
 
   if (!allowedHandles.includes(from)) {
-    return "Unauthorized.";
+    return { mode: "reply", message: "Unauthorized." };
   }
 
   const command = parseAgentCommand(text);
@@ -50,55 +64,55 @@ export async function handleInboundIMessage(
 
   switch (command.type) {
     case "help":
-      return buildHelpText();
+      return { mode: "reply", message: buildHelpText() };
     case "jobs": {
       if (command.target) {
         const jobId = await store.resolveJobId(from, command.target);
         if (!jobId) {
-          return "No job found.";
+          return { mode: "reply", message: "No job found." };
         }
         const job = await store.setCurrentJob(from, jobId);
         if (!job) {
-          return "No job found.";
+          return { mode: "reply", message: "No job found." };
         }
-        return `Current job is now #${job.jobNumber}.`;
+        return { mode: "reply", message: `Current job is now #${job.jobNumber}.` };
       }
       const jobs = await store.listRecentJobs(from, 24, 8);
       const currentJobId = await store.getCurrentJobId(from);
-      return formatJobsList(jobs, currentJobId);
+      return { mode: "reply", message: formatJobsList(jobs, currentJobId) };
     }
     case "status": {
       const jobId = await store.resolveJobId(from, command.target);
       if (!jobId) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       const job = await store.getJob(jobId);
       if (!job) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       const events = await store.getEvents(jobId, 10);
-      return formatJobStatus(job, events);
+      return { mode: "reply", message: formatJobStatus(job, events) };
     }
     case "logs": {
       const jobId = await store.resolveJobId(from, command.target);
       if (!jobId) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       const job = await store.getJob(jobId);
       if (!job) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       const events = await store.getEvents(jobId, command.lines);
-      return formatLogResponse(job, events);
+      return { mode: "reply", message: formatLogResponse(job, events) };
     }
     case "abort": {
       const jobId = await store.resolveJobId(from, command.target);
       if (!jobId) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       const job = await store.getJob(jobId);
       if (!job) {
-        return "No job found.";
+        return { mode: "reply", message: "No job found." };
       }
       job.status = "aborted";
       job.summary = "Aborted by iMessage command.";
@@ -113,14 +127,14 @@ export async function handleInboundIMessage(
         message: "Job aborted by user",
         details: {}
       });
-      return `Aborted ${job.jobId.slice(0, 8)}.`;
+      return { mode: "reply", message: `Aborted ${job.jobId.slice(0, 8)}.` };
     }
     case "confirm": {
       const job = await store.confirmJob(from, command.token);
       if (!job) {
-        return "No pending job matched that token.";
+        return { mode: "reply", message: "No pending job matched that token." };
       }
-      return `Confirmed ${job.jobId.slice(0, 8)}. Job queued.`;
+      return { mode: "reply", message: `Confirmed ${job.jobId.slice(0, 8)}. Job queued.` };
     }
     case "run": {
       const job = await store.enqueuePrompt({
@@ -130,9 +144,24 @@ export async function handleInboundIMessage(
         correlationId: createCorrelationId("imessage")
       });
       if (job.status === "awaiting_confirmation" && job.confirmationToken) {
-        return `Job #${job.jobNumber} is waiting for confirmation. Reply /confirm ${job.confirmationToken} to run it.`;
+        return {
+          mode: "reply",
+          message: `Job #${job.jobNumber} is waiting for confirmation. Reply /confirm ${job.confirmationToken} to run it.`
+        };
       }
-      return waitForJobReply(job, store, cfg, sleep);
+      if (command.loggingEnabled) {
+        const intervalMs = Math.max(1, command.loggingIntervalSeconds ?? 0) * 1000 || cfg.IMESSAGE_LOG_INTERVAL_MS;
+        return {
+          mode: "stream",
+          job,
+          intervalMs,
+          startMessage: `Streaming logs for job #${job.jobNumber} every ${Math.round(intervalMs / 1000)}s.`
+        };
+      }
+      return {
+        mode: "reply",
+        message: await waitForJobReply(job, store, cfg, sleep)
+      };
     }
   }
 }
@@ -171,4 +200,17 @@ async function waitForJobReply(
 
     await sleep(cfg.IMESSAGE_SYNC_POLL_MS);
   }
+}
+
+export function formatIncrementalLogUpdate(job: Job, events: JobEvent[], linesPerUpdate: number): string {
+  const lines = collectEventLogLines(events)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(-Math.max(1, linesPerUpdate));
+
+  if (lines.length === 0) {
+    return "";
+  }
+
+  return [`Job #${job.jobNumber} update:`, ...lines].join("\n");
 }

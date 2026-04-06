@@ -19,7 +19,13 @@ export function parseAgentCommand(rawText: string): AgentCommand {
   }
 
   if (!trimmed.startsWith("/")) {
-    return runCommandSchema.parse({ type: "run", rawText: trimmed, task: trimmed, newJob: false });
+    return runCommandSchema.parse({
+      type: "run",
+      rawText: trimmed,
+      task: trimmed,
+      newJob: false,
+      loggingEnabled: false
+    });
   }
 
   const [verbWithSlash, ...rest] = trimmed.split(whitespace);
@@ -29,7 +35,36 @@ export function parseAgentCommand(rawText: string): AgentCommand {
 
   switch (verb) {
     case "run":
-      return runCommandSchema.parse({ type: "run", rawText: trimmed, task: restText, newJob: true });
+      return runCommandSchema.parse({
+        type: "run",
+        rawText: trimmed,
+        task: restText,
+        newJob: true,
+        loggingEnabled: false
+      });
+    case "logging": {
+      let taskWords = rest;
+      let intervalSeconds: number | undefined;
+
+      if (rest[0] && /^\d+$/.test(rest[0])) {
+        intervalSeconds = Number.parseInt(rest[0], 10);
+        taskWords = rest.slice(1);
+      }
+
+      const task = taskWords.join(" ").trim();
+      if (!task) {
+        return helpCommandSchema.parse({ type: "help", rawText: trimmed });
+      }
+
+      return runCommandSchema.parse({
+        type: "run",
+        rawText: trimmed,
+        task,
+        newJob: false,
+        loggingEnabled: true,
+        loggingIntervalSeconds: intervalSeconds
+      });
+    }
     case "status":
       return statusCommandSchema.parse({ type: "status", rawText: trimmed, target: restText || "latest" });
     case "logs": {
@@ -59,6 +94,7 @@ export function buildHelpText(): string {
   return [
     "Commands:",
     "/run <task>  start a new job",
+    "/logging [seconds] <task>",
     "/status <jobId|latest>",
     "/logs <jobId|latest> [lines]",
     "/abort <jobId|latest>",

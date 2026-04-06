@@ -12,3 +12,9 @@ Local iMessage-to-Pi/Codex runner for a single trusted handle, housed under `hom
 ## Status
 
 Shared command model, Redis-backed control plane, supervised Pi runner, and local iMessage bridge.
+
+## Messaging UX
+
+- Plain text waits for the agent result and replies once the job finishes.
+- `/logging [seconds] <task>` streams periodic log updates, then sends the final result.
+- `/run <task>` starts a separate job instead of continuing the current one.
