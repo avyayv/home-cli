@@ -5,6 +5,11 @@ Primary local Pi harness for this machine. It receives iMessages from a trusted 
 ## Components
 
 - `apps/imessage-bridge`: local iMessage ingress/egress bridge using Messages.app and the local Messages database
+  - `src/index.ts`: bootstrap only
+  - `src/bridge-runtime.ts`: polling loop, state checkpointing, Redis handoff, outbound reply orchestration
+  - `src/log-stream.ts`: per-job event streaming back to iMessage when logging is enabled
+  - `src/handler.ts`: inbound command handling against the shared control plane
+  - `src/imessage.ts`: Messages DB access, bridge state persistence, and AppleScript send helpers
 - `apps/mac-runner`: local daemon that polls jobs, runs Pi, and spawns Codex jobs
 - `apps/admin-cli`: local utility for enqueueing and inspecting jobs without iMessage
 - `packages/shared`: schemas, command parsing, queue/state interfaces, and config
@@ -22,5 +27,6 @@ Shared command model, Redis-backed control plane, supervised Pi runner, and loca
 ## Messaging UX
 
 - Plain text waits for the agent result and replies once the job finishes.
-- `/logging [seconds] <task>` streams periodic log updates, then sends the final result.
+- `/logging on` makes that sender receive a message for every job step, then the final result.
+- `/logging off` restores the default final-answer-only behavior.
 - `/run <task>` starts a separate job instead of continuing the current one.
