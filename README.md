@@ -1,32 +1,75 @@
-# Home Automation
+# gree-cli
 
-Monorepo for a Mac-hosted Pi harness plus local home automation CLIs.
+Standalone Go command-line interface for discovering and controlling GREE HVAC units over the LAN. All command output is JSON. No Python runtime is required.
 
-## Layout
-
-- `harness`
-  - primary local iMessage-to-Pi/Codex harness running on this Mac
-- `cli/`
-  - standalone automation CLIs that the harness can call
-- `cli/gree`
-  - first CLI: GREE HVAC discovery and control over the LAN
-
-## Quick Start
+## Install
 
 ```bash
-uv sync --group dev
+git clone https://github.com/avyayv/gree-cli
+cd gree-cli/cli
+mkdir -p ~/.local/bin
+go build -o ~/.local/bin/gree .
+chmod +x ~/.local/bin/gree
+gree --help
 ```
 
-Main local agent system:
+## Update
 
 ```bash
-cd harness
-pnpm dev:runner
-pnpm dev:imessage
+gree update
 ```
 
-## Docs
+`gree update` fetches the latest source from GitHub, rebuilds the Go CLI, and replaces the installed `gree` binary. Pass an explicit target path if needed: `gree update ~/.local/bin/gree`.
 
-- Harness overview and messaging flow: [harness/README.md](/Users/avyay/home-automation/harness/README.md)
-- Harness setup details: [harness/docs/SETUP.md](/Users/avyay/home-automation/harness/docs/SETUP.md)
-- GREE CLI usage and configuration: [cli/gree/README.md](/Users/avyay/home-automation/cli/gree/README.md)
+## Configuration
+
+The CLI uses `$GREE_CONFIG` when set. Otherwise it reads and writes:
+
+```text
+~/.config/gree/config.toml
+```
+
+Create and manage it with:
+
+```bash
+gree config init
+gree config show
+gree config set-device --mac c039375d1be7
+gree config set scan-wait 2.5
+gree config clear-device
+```
+
+Device selection precedence:
+
+1. Command-line selectors like `--mac` or `--ip`
+2. Configured defaults
+3. Automatic selection when exactly one device is discovered
+
+## Usage
+
+```bash
+gree devices
+gree status
+gree on
+gree off
+gree temp 68
+gree mode heat
+gree fan auto
+```
+
+Use `--ip`, `--mac`, and `--scan-wait` on device commands when needed:
+
+```bash
+gree status --mac c039375d1be7
+gree temp 68 --ip 192.168.1.50 --scan-wait 3
+```
+
+## Local development
+
+```bash
+cd cli
+gofmt -w main.go main_test.go
+go test ./...
+go build -o gree .
+./gree --help
+```

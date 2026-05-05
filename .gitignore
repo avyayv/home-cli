@@ -1,12 +1,10 @@
-.venv/
-.pytest_cache/
-__pycache__/
-*.pyc
-cli/gree/gree/config.toml
-harness/node_modules/
-harness/dist/
-harness/workspace/
-harness/.env
-harness/.env.local
-harness/twilio-serverless/.env
-harness/twilio-serverless/.twiliodeployinfo
+# Local builds
+cli/gree
+gree
+
+# Local config
+config.toml
+cli/config.toml
+
+# Editor / OS noise
+.DS_Store

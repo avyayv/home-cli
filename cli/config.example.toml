@@ -1,4 +1,4 @@
-# Repo-local defaults for the gree CLI.
+# Defaults for the gree CLI.
 scan_wait = 2.0
 
 # Preferred selector. MAC is recommended because DHCP IPs can move.
