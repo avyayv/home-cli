@@ -5,7 +5,7 @@ description: Guidance for AI agents working with this repository's Go-based GREE
 
 # GREE CLI Agent Skill
 
-This repository exposes GREE HVAC discovery and control through `cli/`, a Go CLI binary named `gree`. No Python dependency is required.
+This repository exposes GREE HVAC discovery and control through `cli/gree-cli/`, a Go CLI binary named `gree`. No Python dependency is required.
 
 ## Non-negotiables
 
@@ -13,14 +13,14 @@ This repository exposes GREE HVAC discovery and control through `cli/`, a Go CLI
 - Do not add table, pretty-table, or non-JSON output modes.
 - Do not reintroduce Python into `cli/`.
 - Run `gofmt` before committing Go changes.
-- Update `README.md` and `cli/README.md` when commands change.
+- Update `README.md` and `cli/gree-cli/README.md` when commands change.
 
 ## CLI build / install
 
 From repo root:
 
 ```bash
-cd cli
+cd cli/gree-cli
 gofmt -w main.go main_test.go
 go test ./...
 go build -o gree .
@@ -29,7 +29,7 @@ go build -o gree .
 Install globally for this user:
 
 ```bash
-cd cli
+cd cli/gree-cli
 gofmt -w main.go main_test.go
 go test ./...
 go build -o /Users/avyay/.local/bin/gree .
@@ -87,7 +87,7 @@ gree update [install_path]
 
 ## Testing checklist
 
-From `cli/`:
+From `cli/gree-cli/`:
 
 ```bash
 gofmt -w main.go main_test.go

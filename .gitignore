@@ -1,10 +1,10 @@
 # Local builds
-cli/gree
 gree
+cli/gree-cli/gree
 
 # Local config
 config.toml
-cli/config.toml
+cli/gree-cli/config.toml
 
 # Editor / OS noise
 .DS_Store

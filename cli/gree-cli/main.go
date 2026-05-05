@@ -30,7 +30,7 @@ import (
 const (
 	devicePort          = 7000
 	defaultScanWait     = 2 * time.Second
-	defaultUpdateSource = "https://github.com/avyayv/gree-cli.git"
+	defaultUpdateSource = "https://github.com/avyayv/home-automation.git"
 )
 
 var (
@@ -1317,7 +1317,7 @@ func updateCLI(args []string) (any, error) {
 	if err := fetchSource(source, checkout); err != nil {
 		return nil, err
 	}
-	cliDir := filepath.Join(checkout, "cli")
+	cliDir := filepath.Join(checkout, "cli", "gree-cli")
 	if err := runCmd(cliDir, "go", "build", "-o", target, "."); err != nil {
 		return nil, err
 	}
