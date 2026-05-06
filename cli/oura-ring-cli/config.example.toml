@@ -1,0 +1,3 @@
+# Defaults for the oura CLI.
+# You can also leave this file without a token and set OURA_TOKEN instead.
+access_token = "YOUR_OURA_PERSONAL_ACCESS_TOKEN"

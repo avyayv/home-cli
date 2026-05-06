@@ -1,10 +1,13 @@
 # Local builds
 gree
+oura
 cli/gree-cli/gree
+cli/oura-ring-cli/oura
 
 # Local config
 config.toml
 cli/gree-cli/config.toml
+cli/oura-ring-cli/config.toml
 
 # Editor / OS noise
 .DS_Store
