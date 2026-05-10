@@ -14,8 +14,8 @@ gree --help
 From a fresh clone:
 
 ```bash
-git clone https://github.com/avyayv/home-automation
-cd home-automation/cli/gree-cli
+git clone https://github.com/avyayv/home-cli
+cd home-cli/cli/gree-cli
 go build -o ~/.local/bin/gree .
 ```
 
@@ -25,7 +25,7 @@ go build -o ~/.local/bin/gree .
 gree update
 ```
 
-`gree update` fetches the latest source from `github.com/avyayv/home-automation`, rebuilds this CLI, and replaces the installed `gree` binary. Pass an explicit target path if needed: `gree update ~/.local/bin/gree`.
+`gree update` fetches the latest source from `github.com/avyayv/home-cli`, rebuilds this CLI, and replaces the installed `gree` binary. Pass an explicit target path if needed: `gree update ~/.local/bin/gree`.
 
 ## Configuration
 

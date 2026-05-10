@@ -14,8 +14,8 @@ oura --help
 From a fresh clone:
 
 ```bash
-git clone https://github.com/avyayv/home-automation
-cd home-automation/cli/oura-ring-cli
+git clone https://github.com/avyayv/home-cli
+cd home-cli/cli/oura-ring-cli
 go build -o ~/.local/bin/oura .
 ```
 
@@ -75,7 +75,7 @@ oura get /v2/usercollection/workout --param start_date=2026-05-01 --param end_da
 oura update
 ```
 
-`oura update` fetches the latest source from `github.com/avyayv/home-automation`, rebuilds this CLI, and replaces the installed `oura` binary. Pass an explicit target path if needed: `oura update ~/.local/bin/oura`.
+`oura update` fetches the latest source from `github.com/avyayv/home-cli`, rebuilds this CLI, and replaces the installed `oura` binary. Pass an explicit target path if needed: `oura update ~/.local/bin/oura`.
 
 ## Local development
 

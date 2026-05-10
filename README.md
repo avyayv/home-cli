@@ -1,6 +1,6 @@
-# Home Automation CLIs
+# Home CLI
 
-Collection of standalone home-automation command-line tools.
+Collection of standalone home command-line tools.
 
 ## CLIs
 
@@ -10,8 +10,8 @@ Collection of standalone home-automation command-line tools.
 ## Install GREE CLI
 
 ```bash
-git clone https://github.com/avyayv/home-automation
-cd home-automation/cli/gree-cli
+git clone https://github.com/avyayv/home-cli
+cd home-cli/cli/gree-cli
 mkdir -p ~/.local/bin
 go build -o ~/.local/bin/gree .
 chmod +x ~/.local/bin/gree
@@ -21,8 +21,8 @@ gree --help
 ## Install Oura Ring CLI
 
 ```bash
-git clone https://github.com/avyayv/home-automation
-cd home-automation/cli/oura-ring-cli
+git clone https://github.com/avyayv/home-cli
+cd home-cli/cli/oura-ring-cli
 mkdir -p ~/.local/bin
 go build -o ~/.local/bin/oura .
 chmod +x ~/.local/bin/oura
