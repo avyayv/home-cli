@@ -1,0 +1,132 @@
+name: Release binaries
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-binaries-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release-binaries:
+    if: github.repository == 'avyayv/home-cli'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22.x'
+
+      - name: Test CLIs
+        shell: bash
+        run: |
+          set -euo pipefail
+          for dir in cli/gree-cli cli/oura-ring-cli; do
+            echo "Testing ${dir}"
+            (cd "$dir" && go test ./...)
+          done
+
+      - name: Build release archives
+        id: meta
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          sha="${GITHUB_SHA}"
+          short="${sha:0:12}"
+          version="$(date -u +%Y.%m.%d).${short}"
+          tag="v${version}"
+
+          mkdir -p dist build/release
+
+          archive_os() {
+            case "$1" in
+              darwin) echo macOS ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          archive_arch() {
+            case "$1" in
+              amd64) echo x86_64 ;;
+              *) echo "$1" ;;
+            esac
+          }
+
+          build_one() {
+            local app="$1"
+            local dir="$2"
+            local goos="$3"
+            local goarch="$4"
+            local work="build/release/${app}_${goos}_${goarch}"
+
+            mkdir -p "$work"
+            echo "Building ${app} for ${goos}/${goarch}"
+            (
+              cd "$dir"
+              CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
+                go build -trimpath -ldflags "-s -w" -o "${GITHUB_WORKSPACE}/${work}/${app}" .
+            )
+
+            tar -C "$work" -czf "dist/${app}_${version}_$(archive_os "$goos")_$(archive_arch "$goarch").tar.gz" "$app"
+          }
+
+          for goos in darwin linux; do
+            for goarch in amd64 arm64; do
+              build_one gree cli/gree-cli "$goos" "$goarch"
+              build_one oura cli/oura-ring-cli "$goos" "$goarch"
+            done
+          done
+
+          : > "dist/home-cli_${version}_checksums.txt"
+          while IFS= read -r file; do
+            sha256sum "dist/${file}" | awk -v name="$file" '{print $1 "  " name}' >> "dist/home-cli_${version}_checksums.txt"
+          done < <(cd dist && find . -maxdepth 1 -type f -name '*.tar.gz' -printf '%f\n' | sort)
+
+          cp install.sh dist/install.sh
+
+          cat > release-notes.md <<EOF
+          Automated binary release for commit ${GITHUB_SHA}.
+
+          Install with:
+
+          \`\`\`bash
+          curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- gree
+          curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- oura
+          \`\`\`
+
+          Checksums are in \`home-cli_${version}_checksums.txt\`.
+          EOF
+
+          {
+            echo "version=${version}"
+            echo "tag=${tag}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" dist/* --clobber
+            gh release edit "$TAG" \
+              --title "home-cli ${TAG}" \
+              --notes-file release-notes.md
+          else
+            gh release create "$TAG" dist/* \
+              --target "$GITHUB_SHA" \
+              --title "home-cli ${TAG}" \
+              --notes-file release-notes.md
+          fi

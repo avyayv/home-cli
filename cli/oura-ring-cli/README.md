@@ -5,13 +5,12 @@ Standalone Go command-line interface for the Oura Ring API. The binary is named 
 ## Install
 
 ```bash
-mkdir -p ~/.local/bin
-go build -o ~/.local/bin/oura .
-chmod +x ~/.local/bin/oura
-oura --help
+curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- oura
 ```
 
-From a fresh clone:
+Set `HOME_CLI_INSTALL_DIR` or `INSTALL_DIR` to choose a different install directory, and set `HOME_CLI_VERSION` to install a specific release.
+
+From source:
 
 ```bash
 git clone https://github.com/avyayv/home-cli

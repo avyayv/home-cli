@@ -10,24 +10,16 @@ Collection of standalone home command-line tools.
 ## Install GREE CLI
 
 ```bash
-git clone https://github.com/avyayv/home-cli
-cd home-cli/cli/gree-cli
-mkdir -p ~/.local/bin
-go build -o ~/.local/bin/gree .
-chmod +x ~/.local/bin/gree
-gree --help
+curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- gree
 ```
 
 ## Install Oura Ring CLI
 
 ```bash
-git clone https://github.com/avyayv/home-cli
-cd home-cli/cli/oura-ring-cli
-mkdir -p ~/.local/bin
-go build -o ~/.local/bin/oura .
-chmod +x ~/.local/bin/oura
-oura --help
+curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- oura
 ```
+
+Set `HOME_CLI_INSTALL_DIR` or `INSTALL_DIR` to choose a different install directory, and set `HOME_CLI_VERSION` to install a specific release.
 
 Create an Oura personal access token at https://cloud.ouraring.com/personal-access-tokens, then set `OURA_TOKEN` or run `oura config set-token <token>`.
 
