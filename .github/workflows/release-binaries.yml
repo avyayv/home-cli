@@ -23,13 +23,13 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22.x'
+          go-version: '1.26.x'
 
       - name: Test CLIs
         shell: bash
         run: |
           set -euo pipefail
-          for dir in cli/gree-cli cli/oura-ring-cli; do
+          for dir in cli/apple-home-cli cli/gree-cli cli/oura-ring-cli; do
             echo "Testing ${dir}"
             (cd "$dir" && go test ./...)
           done
@@ -64,8 +64,9 @@ jobs:
           build_one() {
             local app="$1"
             local dir="$2"
-            local goos="$3"
-            local goarch="$4"
+            local package_path="$3"
+            local goos="$4"
+            local goarch="$5"
             local work="build/release/${app}_${goos}_${goarch}"
 
             mkdir -p "$work"
@@ -73,7 +74,7 @@ jobs:
             (
               cd "$dir"
               CGO_ENABLED=0 GOOS="$goos" GOARCH="$goarch" \
-                go build -trimpath -ldflags "-s -w" -o "${GITHUB_WORKSPACE}/${work}/${app}" .
+                go build -trimpath -ldflags "-s -w" -o "${GITHUB_WORKSPACE}/${work}/${app}" "$package_path"
             )
 
             tar -C "$work" -czf "dist/${app}_${version}_$(archive_os "$goos")_$(archive_arch "$goarch").tar.gz" "$app"
@@ -81,8 +82,9 @@ jobs:
 
           for goos in darwin linux; do
             for goarch in amd64 arm64; do
-              build_one gree cli/gree-cli "$goos" "$goarch"
-              build_one oura cli/oura-ring-cli "$goos" "$goarch"
+              build_one apple-home cli/apple-home-cli ./cmd/apple-home "$goos" "$goarch"
+              build_one gree cli/gree-cli . "$goos" "$goarch"
+              build_one oura cli/oura-ring-cli . "$goos" "$goarch"
             done
           done
 
@@ -99,6 +101,7 @@ jobs:
           Install with:
 
           \`\`\`bash
+          curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- apple-home
           curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- gree
           curl -fsSL https://github.com/avyayv/home-cli/releases/latest/download/install.sh | bash -s -- oura
           \`\`\`

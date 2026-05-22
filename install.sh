@@ -10,7 +10,7 @@ usage() {
   cat <<'EOF'
 Install a home-cli binary.
 
-Usage: install.sh <gree|oura>
+Usage: install.sh <apple-home|gree|oura>
 
 Environment:
   HOME_CLI_APP          Binary to install when no argument is provided
@@ -21,7 +21,7 @@ EOF
 }
 
 case "$app" in
-  gree|oura) ;;
+  apple-home|gree|oura) ;;
   -h|--help) usage; exit 0 ;;
   "") usage >&2; exit 2 ;;
   *)
